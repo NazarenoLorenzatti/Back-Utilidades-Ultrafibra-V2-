@@ -1,5 +1,16 @@
-# PasswordManager-BackEnd
-Api Rest para app de gestion de credenciales.  En conjunto con PasswordManager-FrontEnd.
+# Utilidades UltraFibra - BackEnd
 
-La aplicacion estara enfocada al manejo de usuarios y contraseñas de todas las aplicaciones intervinientes en las operatorias diarias de la empresa.
-En la misma se podran dejar registradas las credenciales y despues de un cierto periodo la aplicacion enviara un aviso a la persona que corresponda para que actualice sus credenciales.
+## Actualizacion de Aplicacion
+
+Actualizacion de la aplicacion Utilidades-UltraFibra. 
+
+Anteriormente la misma fue desarrollada con SpringWeb quedando encapsulado el Back y el Front en un mismo Jar, utilizando Thymeleaf y Bootstrap para el Front End. 
+Con esta nuevo desarrollo se pretende modularizar y separar el Back y el Front, siendo desarrollado el Front en Angular y la Api Rest que lo alimenta con SpringBoot. 
+
+Otras tecnologias Implicadas:
+- JWT Json Web Token
+- Oauth
+- Java Mail
+- MySQL
+- Spring Security
+- Protocolo SNMP
