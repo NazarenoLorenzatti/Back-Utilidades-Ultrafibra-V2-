@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import net.ultrafibra.cotrasenas.dao.iHostDao;
 import net.ultrafibra.cotrasenas.dao.iLogDao;
 import net.ultrafibra.cotrasenas.model.Host;
 import net.ultrafibra.cotrasenas.model.Log;
@@ -21,6 +22,9 @@ public class LogServiceImpl implements iLogService {
 
     @Autowired
     private iLogDao logDao;
+    
+    @Autowired
+    private iHostDao hostDao;
 
     @Override
     @Transactional()
@@ -173,6 +177,34 @@ public class LogServiceImpl implements iLogService {
             }
         } catch (Exception e) {
             respuesta.setMetadata("Respuesta nok", "-1", "Error al intentar eliminar el Log");
+            e.getStackTrace();
+            return new ResponseEntity<>(respuesta, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(respuesta, HttpStatus.OK);
+    }
+
+    @Override
+    @Transactional()
+    public ResponseEntity<LogResponseRest> buscarLogPorMes(Host host) {
+        LogResponseRest respuesta = new LogResponseRest();
+        List<Log> listaLogs = new ArrayList();
+        java.util.Date dateUtil = new java.util.Date();
+        try {
+            if (host != null) {
+                for(Log l: logDao.findByHost(hostDao.findById(host.getIdHost()).get())){
+                    if(l.getInicio().getMonth() == dateUtil.getMonth() && l.getInicio().getYear() == dateUtil.getYear()){
+                      
+                        listaLogs.add(l);
+                    }
+                }
+                respuesta.getLogResponse().setLogs(listaLogs);
+                respuesta.setMetadata("Respuesta ok", "00", "Logs encontrador para el host");
+            } else {
+                respuesta.setMetadata("Respuesta nok", "-1", "No se pudo encontrar el Log");
+                return new ResponseEntity<>(respuesta, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            respuesta.setMetadata("Respuesta nok", "-1", "Error al consultar");
             e.getStackTrace();
             return new ResponseEntity<>(respuesta, HttpStatus.INTERNAL_SERVER_ERROR);
         }

@@ -1,8 +1,11 @@
 package net.ultrafibra.cotrasenas.dao;
 
-import net.ultrafibra.cotrasenas.model.BaseBanelco;
+import java.util.List;
+import net.ultrafibra.cotrasenas.model.BaseHomebanking;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface iBaseBanelcoDao extends JpaRepository<BaseBanelco, Long>{
+public interface iBaseBanelcoDao extends JpaRepository<BaseHomebanking, Long>{
+    
+    public List<BaseHomebanking> findAllByIdCliente(String idCliente);
     
 }

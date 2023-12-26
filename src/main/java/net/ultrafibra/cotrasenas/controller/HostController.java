@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @CrossOrigin(origins = {
+    "*",
     "http://45.230.65.207",
     "http://localhost",
     "http://192.168.1.77"})

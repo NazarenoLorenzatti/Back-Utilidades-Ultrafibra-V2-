@@ -10,64 +10,88 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @CrossOrigin(origins = {
+    "*",
     "http://45.230.65.207",
     "http://localhost",
     "http://192.168.1.77"})
 @RequestMapping("/api/v1/logs")
 public class LogController {
-    
+
     @Autowired
     private LogServiceImpl logService;
-    
+
     /**
      * Registrar Log de ping
+     *
      * @param log
-     * @return 
+     * @return
      */
     @PostMapping("/guardar-log")
     public ResponseEntity<LogResponseRest> registrarLog(@RequestBody Log log) {
         return logService.registrarLog(log);
     }
-    
+
     /**
      * Eliminar el log en base al Id proporcionado
+     *
      * @param idLog
-     * @return 
+     * @return
      */
     @DeleteMapping("/eliminar-log/{idLog}")
     public ResponseEntity<LogResponseRest> eliminarLogPorId(Long idLog) {
         return logService.eliminarLogPorId(idLog);
     }
-    
-      /**
+
+    /**
      * Registrar Log de ping
+     *
      * @param log
-     * @return 
+     * @return
      */
     @DeleteMapping("/eliminar-log")
     public ResponseEntity<LogResponseRest> eliminarLog(@RequestBody Log log) {
         return logService.eliminarLog(log);
     }
-    
+
     /**
-     * Buscar todos los Log del host 
+     * Buscar todos los Log del host
+     *
      * @param host
-     * @return 
+     * @return
      */
     @PostMapping("/buscar-log")
-    public ResponseEntity<LogResponseRest> buscarLog(@RequestBody Host host){
+    public ResponseEntity<LogResponseRest> buscarLog(@RequestBody Host host) {
         return logService.buscarLog(host);
+    }
+
+    /**
+     * Eliminar los Logs del Host
+     *
+     * @param host
+     * @return
+     */
+    @DeleteMapping("/eliminar-log-host")
+    public ResponseEntity<LogResponseRest> eliminarLogDeHost(@RequestBody Host host) {
+        return logService.eliminarLogDeHost(host);
+    }
+
+    /**
+     * Buscar Log por mes Actual
+     *
+     * @return
+     */
+    @PostMapping("/buscar-log-mes")
+    public ResponseEntity<LogResponseRest> buscarLogPorMes(@RequestBody Host host) {
+        return logService.buscarLogPorMes(host);
     }
     
     /**
-     * Eliminar los Logs del Host
+     * Buscar el ultimo log del host
      * @param host
      * @return 
      */
-    @DeleteMapping("/eliminar-log-host")
-    public ResponseEntity<LogResponseRest> eliminarLogDeHost(@RequestBody Host host){
-        return logService.eliminarLogDeHost(host);
+    @PostMapping("/ultimo-log")
+    public ResponseEntity<LogResponseRest> buscarUltimoLogPorHost(@RequestBody Host host) {
+        return logService.buscarUltimoLogPorHost(host);
     }
-    
-    
 }

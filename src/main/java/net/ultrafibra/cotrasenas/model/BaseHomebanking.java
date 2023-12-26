@@ -8,7 +8,7 @@ import lombok.Data;
 @Entity
 @Data
 @Table(name = "table_banelco")
-public class BaseBanelco implements Serializable {
+public class BaseHomebanking implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -44,10 +44,10 @@ public class BaseBanelco implements Serializable {
     @Column(name = "documento_origen")
     private String documentoOrigen;
 
-    public BaseBanelco() {
+    public BaseHomebanking() {
     }
     
-    public BaseBanelco(String idCliente, String dniCliente, double totalSinRecargo, 
+    public BaseHomebanking(String idCliente, String dniCliente, double totalSinRecargo, 
             double totalConRecargo, double importeAdeudado, Date fechaFactura, 
             Date fechaVencimiento, String numeroFactura, String documentoOrigen) {
         

@@ -10,5 +10,5 @@ public interface iLogDao extends JpaRepository<Log, Long>{
     public List<Log> findByHost(Host host);
      
     public void deleteByHost(Host host);
-    
+      
 }

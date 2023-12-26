@@ -12,7 +12,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
 import net.ultrafibra.cotrasenas.dao.iBaseBanelcoDao;
-import net.ultrafibra.cotrasenas.model.BaseBanelco;
+import net.ultrafibra.cotrasenas.model.BaseHomebanking;
+import net.ultrafibra.cotrasenas.response.BaseBanelcoResponseRest;
 import net.ultrafibra.cotrasenas.response.ResponseRest;
 import net.ultrafibra.cotrasenas.service.iBaseBanelcoService;
 import org.apache.poi.ss.usermodel.*;
@@ -28,13 +29,30 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
 
     @Autowired
     private iBaseBanelcoDao banelcoDao;
-    
+
     private double montoTotal;
 
     private DecimalFormat df = new DecimalFormat("#.00");
 
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<BaseBanelcoResponseRest> obtenerTabla() {
+        BaseBanelcoResponseRest respuesta = new BaseBanelcoResponseRest();
+        List<BaseHomebanking> baseList;
+        try {
+            baseList = banelcoDao.findAll();
+            respuesta.getBaseBanelcoResponse().setBaseBanelco(baseList);
+            respuesta.setMetadata("Respuesta ok", "00", "Obtenido todas las celdas");
+        } catch (Exception e) {
+            respuesta.setMetadata("Respuesta nok", "-1", "Error al intentar obtener las celdas cargadas");
+            e.getStackTrace();
+            return new ResponseEntity<>(respuesta, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(respuesta, HttpStatus.OK);
+    }
 
     @Override
+    @Transactional()
     public ResponseEntity<ResponseRest> eliminarTodo() {
         ResponseRest respuesta = new ResponseRest();
         try {
@@ -66,7 +84,7 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
                     while (rowIterator.hasNext()) {
                         Row row = rowIterator.next();
 
-                        BaseBanelco lineaBanelco = new BaseBanelco();
+                        BaseHomebanking lineaBanelco = new BaseHomebanking();
 
                         for (int i = 0; i < headerRow.getLastCellNum(); i++) {
                             Cell headerCell = headerRow.getCell(i);
@@ -77,13 +95,13 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
                                 String dataString = null;
                                 Long date = null;
                                 double dataNumeric = 0.0;
-                                if(dataCell.getCellType()== CellType.NUMERIC && !header.equals("Fecha vencimiento") && !header.equals("Fecha factura")){
+                                if (dataCell.getCellType() == CellType.NUMERIC && !header.equals("Fecha vencimiento") && !header.equals("Fecha factura")) {
                                     dataNumeric = dataCell.getNumericCellValue();
-                                } else if(dataCell.getCellType()== CellType.STRING) {
+                                } else if (dataCell.getCellType() == CellType.STRING) {
                                     dataString = dataCell.getStringCellValue();
                                 } else {
                                     date = dataCell.getDateCellValue().getTime();
-                                }                                 
+                                }
 
                                 switch (header) {
                                     case "Empresa/ID":
@@ -142,9 +160,9 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
 
         String filas = "";
         int cont = 0;
-        
+
         // CUERPO DE BASE
-        for (BaseBanelco b : banelcoDao.findAll()) {
+        for (BaseHomebanking b : banelcoDao.findAll()) {
             if (b.getFechaVencimiento().toLocalDate().isAfter(b.getFechaVencimiento().toLocalDate().plusDays(60))) {
                 continue;
             } else {
@@ -201,7 +219,7 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
         return ceros + fila;
     }
 
-    private String montosXVencimientos(BaseBanelco b) {
+    private String montosXVencimientos(BaseHomebanking b) {
         String montosXVencimientos = "";
         LocalDate fechaVencimiento = b.getFechaVencimiento().toLocalDate();
         String strTotalSinRecargo = cerosIzquierda(String.valueOf(df.format(b.getTotalSinRecargo())).replace(",", ""), 11);

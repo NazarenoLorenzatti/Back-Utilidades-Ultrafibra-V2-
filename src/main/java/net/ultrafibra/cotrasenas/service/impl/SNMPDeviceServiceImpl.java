@@ -162,6 +162,7 @@ public class SNMPDeviceServiceImpl implements iSNMPDeviceService {
     }
 
     @Override
+
     @Transactional()
     public ResponseEntity<SNMPDeviceResponseRest> consultaSNMP(SNMPDevice dispositivo, OidClass oidSolicitud) {
         SNMPDeviceResponseRest respuesta = new SNMPDeviceResponseRest();

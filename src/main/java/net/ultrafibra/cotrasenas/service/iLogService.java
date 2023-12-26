@@ -20,4 +20,6 @@ public interface iLogService {
     public ResponseEntity<LogResponseRest> eliminarLogDeHost(Host host);
     
     public ResponseEntity<LogResponseRest> eliminarLogPorId(Long idLog);
+    
+    public  ResponseEntity<LogResponseRest> buscarLogPorMes(Host host);
 }
