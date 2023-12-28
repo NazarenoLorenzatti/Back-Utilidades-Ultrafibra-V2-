@@ -8,5 +8,4 @@ public interface iDebitosAutomaticosDao extends JpaRepository<DebitosAutomaticos
     
     public List<DebitosAutomaticos> findAllByIdCliente(String idCliente);
     
-    
 }

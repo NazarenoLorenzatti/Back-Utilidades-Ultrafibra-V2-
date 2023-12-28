@@ -11,7 +11,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
-import net.ultrafibra.cotrasenas.dao.iBaseBanelcoDao;
 import net.ultrafibra.cotrasenas.model.BaseHomebanking;
 import net.ultrafibra.cotrasenas.response.BaseBanelcoResponseRest;
 import net.ultrafibra.cotrasenas.response.ResponseRest;
@@ -22,13 +21,14 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import net.ultrafibra.cotrasenas.dao.iHomebankingDao;
 
 @Slf4j
 @Service
 public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
 
     @Autowired
-    private iBaseBanelcoDao banelcoDao;
+    private iHomebankingDao banelcoDao;
 
     private double montoTotal;
 
@@ -105,7 +105,7 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
 
                                 switch (header) {
                                     case "Empresa/ID":
-                                        lineaBanelco.setIdCliente(String.valueOf(dataNumeric).replace(".00", ""));
+                                        lineaBanelco.setIdCliente(dataString);
                                         break;
                                     case "Empresa/Número de identificación principal":
                                         lineaBanelco.setDniCliente(dataString);
@@ -128,7 +128,7 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
                                     case "Fecha factura":
                                         lineaBanelco.setFechaFactura(new Date(date));
                                         break;
-                                    case "Documento de Origen ":
+                                    case "Documento origen":
                                         lineaBanelco.setDocumentoOrigen(dataString);
                                         break;
                                 }

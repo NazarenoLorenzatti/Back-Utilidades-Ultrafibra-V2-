@@ -4,10 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import static java.lang.String.valueOf;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +16,7 @@ import net.ultrafibra.cotrasenas.service.iDebitosAutomaticosService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,14 +72,13 @@ public class DebitosAutomaticosServiceImpl implements iDebitosAutomaticosService
                             if (headerCell != null && dataCell != null) {
                                 String header = headerCell.getStringCellValue();
                                 String dataString = null;
-                                Long date = null;
                                 double dataNumeric = 0.0;
                                 if (dataCell.getCellType() == CellType.NUMERIC && !header.equals("Fecha vencimiento") && !header.equals("Fecha factura")) {
                                     dataNumeric = dataCell.getNumericCellValue();
                                 } else if (dataCell.getCellType() == CellType.STRING) {
                                     dataString = dataCell.getStringCellValue();
                                 } else {
-                                    date = dataCell.getDateCellValue().getTime();
+                                    dataCell.getDateCellValue().getTime();
                                 }
 
                                 switch (header) {

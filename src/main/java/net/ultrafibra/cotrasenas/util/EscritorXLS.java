@@ -6,21 +6,13 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-/**
- *
- * @author nlore
- */
 public class EscritorXLS {
 
-    protected List<List<String>> filas;
-    protected List<String> cabeceros;
+    public EscritorXLS() {
 
-    public EscritorXLS(List<List<String>> filas, List<String> cabeceros) {
-        this.filas = filas;
-        this.cabeceros = cabeceros;
     }
-
-    public Workbook exportar() {
+    
+    public Workbook exportar(List<List<String>> filas, List<String> cabeceros) {
 
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Hoja1");
@@ -28,13 +20,13 @@ public class EscritorXLS {
         int index = 0;
         //Headers
         Row headerRow = sheet.createRow(index);
-        for (String c : this.cabeceros) {
-            headerRow.createCell(index).setCellValue(this.cabeceros.get(index));
+        for (String c : cabeceros) {
+            headerRow.createCell(index).setCellValue(cabeceros.get(index));
             index++;
         }
 
-        for (int i = 0; i < this.filas.size(); i++) {
-            List<String> fila = this.filas.get(i);
+        for (int i = 0; i < filas.size(); i++) {
+            List<String> fila = filas.get(i);
             Row dataRow = sheet.createRow(i + 1);
             int ind = 0;
             for (String celda : fila) {
@@ -42,7 +34,6 @@ public class EscritorXLS {
                 ind++;
             }
         }
-
         return workbook;
     }
 }
