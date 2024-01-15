@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.ultrafibra.utilidades.dao.iEventosDao;
 import net.ultrafibra.utilidades.model.Eventos;
 import net.ultrafibra.utilidades.model.SNMPDevice;
+import net.ultrafibra.utilidades.model.VariableOid;
 import net.ultrafibra.utilidades.response.EventosResponseRest;
 import net.ultrafibra.utilidades.service.iEventosService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,6 +135,7 @@ public class EventosServiceImpl implements iEventosService {
         return new ResponseEntity<>(respuesta, HttpStatus.OK);
     }
     
+    @Transactional(readOnly = true)
     public Eventos ultimoEvento(SNMPDevice dispositivo){
         Eventos ultimoEvento = null;
         try{
@@ -144,6 +146,22 @@ public class EventosServiceImpl implements iEventosService {
         } catch (Exception e) {            
              e.getStackTrace();
              System.out.println("Ocurrio un problema al intentar obtener el ultimo evento");
+             return null;
+        }
+        return ultimoEvento;
+    }
+    
+    @Transactional(readOnly = true)
+     public Eventos ultimoEvento(String variable){
+        Eventos ultimoEvento = null;
+        try{
+          List<Eventos> listaEventos =  eventoDao.findLatestEvents(variable);
+          if(listaEventos != null){
+              ultimoEvento = listaEventos.get(0);
+          }
+        } catch (Exception e) {            
+             e.getStackTrace();
+             System.out.println("Ocurrio un problema al intentar obtener el ultimo evento dee la variable");
              return null;
         }
         return ultimoEvento;

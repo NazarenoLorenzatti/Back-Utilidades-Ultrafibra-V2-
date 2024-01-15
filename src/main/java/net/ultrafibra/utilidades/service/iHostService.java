@@ -14,9 +14,6 @@ public interface iHostService {
 
     public ResponseEntity<HostResponseRest> eliminarHost(Long idHost);
 
-    public ResponseEntity<HostResponseRest> editarHost(Host host);
-    
-    public ResponseEntity<HostResponseRest> hacerPing(String ipHost);
-    
+    public ResponseEntity<HostResponseRest> editarHost(Host host); 
     
 }

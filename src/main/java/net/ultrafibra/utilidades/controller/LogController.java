@@ -70,7 +70,7 @@ public class LogController {
      * @param host
      * @return
      */
-    @DeleteMapping("/eliminar-log-host")
+    @PostMapping("/eliminar-log-host")
     public ResponseEntity<LogResponseRest> eliminarLogDeHost(@RequestBody Host host) {
         return logService.eliminarLogDeHost(host);
     }
@@ -78,6 +78,7 @@ public class LogController {
     /**
      * Buscar Log por mes Actual
      *
+     * @param host
      * @return
      */
     @PostMapping("/buscar-log-mes")

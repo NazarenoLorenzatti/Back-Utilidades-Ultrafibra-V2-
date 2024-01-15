@@ -29,11 +29,11 @@ public class SNMPDevice implements Serializable {
     @Column(name = "community")
     private String comunidad;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JoinColumn(name = "SNMP_DEVICE_id_device")
     private List<Eventos> eventos;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JoinColumn(name = "SNMP_DEVICE_id_device")
     @JsonManagedReference
     private List<OidClass> oids;

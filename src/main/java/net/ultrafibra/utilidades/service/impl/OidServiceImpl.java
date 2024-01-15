@@ -122,12 +122,17 @@ public class OidServiceImpl implements iOidService {
     @Transactional()
     public ResponseEntity<OidResponseRest> eliminarOid(Long idOid) {
         OidResponseRest respuesta = new OidResponseRest();
+        System.out.println("OID RECIBIDO = " + idOid);
         try {
             if (idOid != null) {
-                OidClass oidEncontrado = oidDao.findById(idOid).get();
-                if (oidEncontrado != null) {
-                    oidDao.delete(oidEncontrado);
-                    respuesta.setMetadata("Respuesta ok", "00", "Oid Guardado");
+                Optional<OidClass> oidEncontrado = oidDao.findById(idOid);
+                if (oidEncontrado.isPresent()) {
+                    OidClass o = oidEncontrado.get();
+                    System.out.println("oidEncontrado = " + o.getEvento() + " " + o.getIdOid());
+                    oidDao.delete(o);
+                    oidDao.deleteById(idOid);
+                    System.out.println("PASO LA ELIMINACION");
+                    respuesta.setMetadata("Respuesta ok", "00", "Oid Eliminado");
 
                 } else {
                     respuesta.setMetadata("Respuesta nok", "-1", "No se pudo guardar el Oid");

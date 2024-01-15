@@ -148,7 +148,7 @@ public class LogServiceImpl implements iLogService {
         LogResponseRest respuesta = new LogResponseRest();
         try {
             if (host != null) {
-                logDao.deleteByHost(host);
+                logDao.deleteByHost(hostDao.findById(host.getIdHost()).get());
                 respuesta.setMetadata("Respuesta ok", "00", "Se Eliminaron los log");
             } else {
                 respuesta.setMetadata("Respuesta nok", "-1", "No se pudieron eliminar Los Logs");

@@ -21,13 +21,17 @@ public class Tecnico implements Serializable {
     
     @Column(name = "tel_tech")
     private String telefono;
+    
+    @Column(name = "mail_tech")
+    private String email;
 
     public Tecnico() {
     }
 
-    public Tecnico(String nombreTecnico, String telefono) {
+    public Tecnico(String nombreTecnico, String telefono, String email) {
         this.nombreTecnico = nombreTecnico;
         this.telefono = telefono;
+        this.email = email;
     }
 
 

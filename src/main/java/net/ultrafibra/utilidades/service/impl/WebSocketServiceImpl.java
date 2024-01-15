@@ -1,6 +1,8 @@
 package net.ultrafibra.utilidades.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import net.ultrafibra.utilidades.model.MessageAlert;
+import net.ultrafibra.utilidades.model.MessaggePing;
 import net.ultrafibra.utilidades.service.iWebSocketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,8 +20,13 @@ public class WebSocketServiceImpl implements iWebSocketService {
     }
 
     @Override
-    public void enviarMensaje(String mensaje) {
+    public void enviarMensaje(MessageAlert mensaje) {
         messagingTemplate.convertAndSend("/topic/snmp-notifications", mensaje);
+    }
+
+    @Override
+    public void enviarMensaje(MessaggePing mensaje) {
+        messagingTemplate.convertAndSend("/topic/ping-notifications", mensaje);
     }
 
 }

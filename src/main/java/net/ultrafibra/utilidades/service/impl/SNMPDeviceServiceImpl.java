@@ -1,22 +1,22 @@
 package net.ultrafibra.utilidades.service.impl;
 
-import net.ultrafibra.utilidades.model.OidClass;
-import net.ultrafibra.utilidades.model.Eventos;
-import net.ultrafibra.utilidades.model.SNMPDevice;
-import net.ultrafibra.utilidades.model.VariableOid;
+import net.ultrafibra.utilidades.model.*;
 import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import net.ultrafibra.utilidades.dao.iSNMPDeviceDao;
+import net.ultrafibra.utilidades.model.MessageAlert;
+import net.ultrafibra.utilidades.model.Tecnico;
 import net.ultrafibra.utilidades.response.SNMPDeviceResponseRest;
 import net.ultrafibra.utilidades.service.iSNMPDeviceService;
+import net.ultrafibra.utilidades.util.EmailService;
+import net.ultrafibra.utilidades.util.SMSService;
 import net.ultrafibra.utilidades.util.SnmpClient;
 import org.snmp4j.event.ResponseEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -31,15 +31,20 @@ public class SNMPDeviceServiceImpl implements iSNMPDeviceService {
 
     @Autowired
     private SnmpClient snmpService;
-
-    @Autowired
-    private OidServiceImpl oidService;
-
     @Autowired
     private EventosServiceImpl eventosService;
 
     @Autowired
-    private  WebSocketServiceImpl webSocketService;
+    private WebSocketServiceImpl webSocketService;
+
+    @Autowired
+    private SMSService smsService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private TecnicoServiceImpl tecnicoService;
 
     @Override
     @Transactional(readOnly = true)
@@ -173,40 +178,23 @@ public class SNMPDeviceServiceImpl implements iSNMPDeviceService {
     // METODO PARA PROBAR LA CONEXION SNMP 
     @Override
     @Transactional()
-    public ResponseEntity<SNMPDeviceResponseRest> consultaSNMP(SNMPDevice dispositivo, String oidSolicitud) {
+    public ResponseEntity<SNMPDeviceResponseRest> consultaSNMP(String ipDispositivo, String oidSolicitud, String telefono, String email) {
         SNMPDeviceResponseRest respuesta = new SNMPDeviceResponseRest();
         List<SNMPDevice> dispositivos = new ArrayList<>();
-        System.out.println("dispositivos = " + dispositivo.getIpDispositivo());
         try {
-            if (dispositivo != null && oidSolicitud != null) {
-                SNMPDevice dispositivoConsultado = dispositivoDao.findByIpDispositivo(dispositivo.getIpDispositivo());
-                ResponseEvent responseSnmp = snmpService.getSnmpData(dispositivoConsultado.getIpDispositivo(), dispositivoConsultado.getComunidad(), oidSolicitud);
+            if (ipDispositivo != null && oidSolicitud != null) {
+                SNMPDevice d = dispositivoDao.findByIpDispositivo(ipDispositivo);
+                ResponseEvent responseSnmp = snmpService.getSnmpData(d.getIpDispositivo(), d.getComunidad(), oidSolicitud);
                 if (responseSnmp != null) {
-                    String respuestaSnmp = null;
-                    var variables = oidService.buscarOidPorOid(oidSolicitud).getBody().getOidResponse().getOids().get(0).getVariables();
-                    for (VariableOid v : variables) {
-                        if (v.getValorVariable().equals(responseSnmp.getResponse().get(0).getVariable().toString())) {
-                            respuestaSnmp = v.getSintaxisVariable();
-                        }
-                    }
 
-                    // Guardamos el Evento de Prueba para mantener el registro
-                    Eventos evento = new Eventos();
-                    Instant instant = Instant.now();
-                    LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-                    Timestamp timestamp = Timestamp.valueOf(localDateTime);
-                    evento.setFechaEvento(timestamp);
-                    evento.setLogEvento("PRUEBA DE CONEXION");
-                    evento.setSnmpDevice(dispositivoConsultado);
-                    this.eventosService.registrarEvento(evento);
-                    
-                    // Envio de Mensaje Web Socket
-                    this.webSocketService.enviarMensaje(evento.getLogEvento() + " " + evento.getFechaEvento().toString());
-                    
-                    dispositivos.add(dispositivoConsultado);
+                    VariableOid v = new VariableOid("0", "PRUEBA DE CONEXION", "LOW", d.getOids().get(0));
+                    registrarEvento(d, v);
+                    this.enviarAlertasPrueba(telefono, email);
+
+                    dispositivos.add(d);
                     respuesta.getSnmpDeviceResponse().setSNMPDevices(dispositivos);
                     respuesta.setMetadata("Respuesta ok", "00", "Dispositivo Encontrado");
-                    
+
                 } else {
                     respuesta.setMetadata("Respuesta nok", "-1", "No se encuentra el dispositivo");
                     return new ResponseEntity<>(respuesta, HttpStatus.NOT_FOUND);
@@ -223,58 +211,113 @@ public class SNMPDeviceServiceImpl implements iSNMPDeviceService {
         return new ResponseEntity<>(respuesta, HttpStatus.OK);
     }
 
-    /*
-    @Async
-    @Scheduled(fixedDelay = 5000) // Intervalo de 5 segundos (ajusta según tus necesidades)
+ //  @Async
+  /*  @Scheduled(fixedDelay = 360000) // Intervalo de 6 minutos
     public void controlSnmp() throws Exception {
         for (SNMPDevice d : dispositivoDao.findAll()) {
-            Eventos evento = eventosService.ultimoEvento(d);
-            if (evento != null) {
-                for (OidClass oid : d.getOids()) {
-                    ResponseEvent responseSnmp = snmpService.getSnmpData(d.getIpDispositivo(), d.getComunidad(), oid.getOid());
+            for (OidClass oid : d.getOids()) {
+                // Realiza la consulta SNMP y guarda el valor de la respuesta en *varResponse para comprobacion
+                ResponseEvent responseSnmp = snmpService.getSnmpData(d.getIpDispositivo(), d.getComunidad(), oid.getOid());
+                String varResponse = responseSnmp.getResponse().get(0).getVariable().toString();
+                VariableOid var = oid.getVariables().get(0);
 
-                    // Si la variable es igual no hace nada por que significa que no hubo cambios con respecto al ultimo evento registrado
-                    if (!evento.getVariableEvento().equals(responseSnmp.getResponse().get(0).getVariable().toString())) {
-                        Eventos nuevoEvento = new Eventos();
-                        for (VariableOid v : oid.getVariables()) {
-                            if (v.getValorVariable().equals(responseSnmp.getResponse().get(0).getVariable().toString())) {
-                                nuevoEvento.setLogEvento(v.getSintaxisVariable());
-                                nuevoEvento.setVariableEvento(v.getValorVariable());
-                            }
-                        }
-                        nuevoEvento.setSnmpDevice(d);
-                        Instant instant = Instant.now();
-                        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-                        Timestamp timestamp = Timestamp.valueOf(localDateTime);
-
-                        nuevoEvento.setFechaEvento(timestamp);
-                        eventosService.registrarEvento(nuevoEvento);
-                        this.messagingTemplate.convertAndSend("/topic/event-updates", "Nuevo evento registrado: " + nuevoEvento.getLogEvento());
+                // Si el OID corresponde a un Input de energia
+                if (oid.isInput()) {
+                    if (Integer.parseInt(varResponse) >= Integer.parseInt(var.getValorVariable())) {
+                        var.setSintaxisVariable(var.getSintaxisVariable() + " Input Normal, voltaje: " + varResponse);
+                        var.setPrioridad("LOW");
+                        this.registrarEvento(d, var);
+                    } else if (Integer.parseInt(varResponse) < Integer.parseInt(var.getValorVariable())) {
+                        var.setSintaxisVariable(var.getSintaxisVariable() + " ERROR EN INPUT, voltaje: " + varResponse);
+                        this.registrarEvento(d, var);
                     }
-
-                }
-            } else {
-                for (OidClass oid : d.getOids()) {
-                    ResponseEvent responseSnmp = snmpService.getSnmpData(d.getIpDispositivo(), d.getComunidad(), oid.getOid());
-                    Eventos nuevoEvento = new Eventos();
+                } else {
                     for (VariableOid v : oid.getVariables()) {
-                        if (v.getValorVariable().equals(responseSnmp.getResponse().get(0).getVariable().toString())) {
-                            nuevoEvento.setLogEvento(v.getSintaxisVariable());
-                            nuevoEvento.setVariableEvento(v.getValorVariable());
+                        if (v.getValorVariable().equals(varResponse)) {
+                            this.registrarEvento(d, v);
                         }
                     }
-                    nuevoEvento.setSnmpDevice(d);
-                    Instant instant = Instant.now();
-                    LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-                    Timestamp timestamp = Timestamp.valueOf(localDateTime);
-
-                    nuevoEvento.setFechaEvento(timestamp);
-                    eventosService.registrarEvento(nuevoEvento);
-                    this.messagingTemplate.convertAndSend("/topic/event-updates", "Nuevo evento registrado: " + nuevoEvento.getLogEvento());
                 }
             }
-
+            Thread.sleep(5000);
         }
     }
-*/
+    */
+    private void enviarMensaje(Eventos evento, Tecnico t) {
+        this.smsService.enviarMensaje(
+                // CUERPO DE SMS
+                evento.getSnmpDevice().getNombreDispositivo() + "\n"
+                + evento.getLogEvento() + "\n"
+                + evento.getFechaEvento(),
+                // TELEFONO
+                t.getTelefono());
+    }
+
+    private void enviarEmail(Eventos evento, Tecnico t) {
+        this.emailService.enviarMail(
+                // MAIL DESTINATARIO
+                t.getEmail(),
+                //ASUNTO
+                evento.getSnmpDevice().getNombreDispositivo() + " " + evento.getLogEvento(),
+                // CUERPO DE MAIL
+                evento.getSnmpDevice().getNombreDispositivo() + "\n"
+                + evento.getLogEvento() + "\n"
+                + evento.getFechaEvento()
+        );
+    }
+
+    private void socketMessage(Eventos evento) {
+        // Envio de Mensaje Web Socket
+        MessageAlert messageAlert = new MessageAlert(
+                evento.getLogEvento(),
+                evento.getSnmpDevice().getNombreDispositivo(),
+                evento.getFechaEvento().toString(),
+                evento.getSnmpDevice().getIdDispositivo(),
+                evento.getPrioridad()
+        );
+        this.webSocketService.enviarMensaje(messageAlert);
+    }
+
+    private void registrarEvento(SNMPDevice d, VariableOid v) {
+        // Fecha que se registra el evento
+        Instant instant = Instant.now();
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        Timestamp timestamp = Timestamp.valueOf(localDateTime);
+
+        // Nuevo Evento
+        Eventos nuevoEvento = new Eventos();
+        nuevoEvento.setLogEvento(v.getSintaxisVariable());
+        nuevoEvento.setNombreOid(v.getOid().getEvento());
+        nuevoEvento.setOidEvento(v.getOid().getOid());
+        nuevoEvento.setVariableEvento(v.getValorVariable());
+        nuevoEvento.setSnmpDevice(d);
+        nuevoEvento.setPrioridad(v.getPrioridad());
+        nuevoEvento.setFechaEvento(timestamp);
+        eventosService.registrarEvento(nuevoEvento);
+
+        // Mensaje del Socket al Front
+        this.socketMessage(nuevoEvento);
+        // Se envian las alertas si no es una prueba
+        if (!nuevoEvento.getLogEvento().contains("PRUEBA")) {
+            this.enviarAlertas(nuevoEvento);
+        }
+    }
+
+    private void enviarAlertas(Eventos nuevoEvento) {
+        // Alertas por SMS o Mail segun corresponda
+        for (Tecnico t : tecnicoService.listarTecnicos().getBody().getTecnicoResponse().getTecnicos()) {
+            if (nuevoEvento.getPrioridad().equals("WARN")) {
+                this.enviarEmail(nuevoEvento, t);
+            } else if (nuevoEvento.getPrioridad().equals("DANGER")) {
+                this.enviarEmail(nuevoEvento, t);
+                this.enviarMensaje(nuevoEvento, t);
+            }
+        }
+    }
+
+    private void enviarAlertasPrueba(String telefono, String email) {
+        this.smsService.enviarMensaje("AVISO DE PRUEBA", telefono);
+        this.emailService.enviarMail(email, "MAIL DE PRUEBA", "MAIL DE PRUEBA");
+    }
+
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @CrossOrigin(origins = {
+    "*",
     "http://45.230.65.207", 
     "http://localhost",
     "http://192.168.1.77"})
@@ -45,6 +46,8 @@ public class EventosController {
       */
      @DeleteMapping("/eliminar-evento/{idEvento}")
      public ResponseEntity<EventosResponseRest> eliminarEvento(@PathVariable Long idEvento){
+         System.out.println("PASOOO ELIMINAR EVENTOS");
+         System.out.println("idEvento = " + idEvento);
          return eventosService.eliminarEvento(idEvento);
      }
      
@@ -53,8 +56,9 @@ public class EventosController {
       * @param dispositivo
       * @return 
       */
-     @DeleteMapping("/eliminar-eventos")
+     @PostMapping("/eliminar-eventos")
       public ResponseEntity<EventosResponseRest> eliminarEventos(@RequestBody  SNMPDevice dispositivo){
+          System.out.println("PASOOO ELIMINAR EVENTOS");
          return eventosService.eliminarEventos(dispositivo);
      }
       

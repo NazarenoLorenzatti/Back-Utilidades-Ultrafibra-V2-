@@ -24,10 +24,10 @@ public class Host implements Serializable {
     @Column(name = "name_host")
     private String nombreHost;
 
-    @OneToMany(mappedBy = "host", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "host",fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<Log> logs = new ArrayList<>();
 
-    @OneToMany(mappedBy = "host", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "host",fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<Datasets> datasets = new ArrayList<>();
 
     public Host() {

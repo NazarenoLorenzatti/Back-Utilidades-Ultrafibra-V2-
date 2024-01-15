@@ -24,7 +24,10 @@ public class OidClass implements Serializable {
     @Column(name = "event")
     private String evento;
 
-    @OneToMany(mappedBy = "oid", cascade = CascadeType.ALL)
+    @Column(name = "oid_input")
+    private boolean isInput;
+
+    @OneToMany(mappedBy = "oid", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<VariableOid> variables = new ArrayList<>();
 
     @ManyToOne

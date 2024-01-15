@@ -11,18 +11,21 @@ import lombok.Data;
 public class VariableOid implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_variable_oid")
     private Long idVariable;
-    
+
     @Column(name = "value_variable")
     private String valorVariable;
-    
+
     @Column(name = "syntax_variable")
     private String sintaxisVariable;
-    
+
+    @Column(name = "priority")
+    private String prioridad;
+
     @ManyToOne
     @JsonBackReference
     private OidClass oid;
@@ -30,10 +33,12 @@ public class VariableOid implements Serializable {
     public VariableOid() {
     }
 
-    public VariableOid(String valorVariable, String sintaxisVariable) {
+    public VariableOid(String valorVariable, String sintaxisVariable, String prioridad, OidClass oid) {
         this.valorVariable = valorVariable;
         this.sintaxisVariable = sintaxisVariable;
+        this.prioridad = prioridad;
+        this.oid = oid;
     }
-   
-    
+
+
 }

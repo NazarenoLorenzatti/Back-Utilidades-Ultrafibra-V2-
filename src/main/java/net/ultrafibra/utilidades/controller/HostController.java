@@ -50,34 +50,35 @@ public class HostController {
     public ResponseEntity<HostResponseRest> eliminarHost(@PathVariable Long idHost) {
         return hostService.eliminarHost(idHost);
     }
-    
+
     /**
      * Editar el dispositivo guardado
+     *
      * @param host
-     * @return 
+     * @return
      */
-    @PostMapping("/editar-host")
+    @PutMapping("/editar-host")
     public ResponseEntity<HostResponseRest> editarHost(@RequestBody Host host) {
         return hostService.editarHost(host);
     }
-    
+
     /**
      * Buscar el Host por el Ip
+     *
      * @param ipHost
-     * @return 
+     * @return
      */
     @GetMapping("/buscar-host-ip/{ipHost}")
     public ResponseEntity<HostResponseRest> buscarHostPorIp(@PathVariable String ipHost) {
         return hostService.buscarHostPorIp(ipHost);
     }
-    
+
     /**
-     * Hacer Ping al host
-     * @param ipHost
-     * @return 
+     *Hacer un Ping individual
+     * @param host
      */
-    @GetMapping("/hacer-ping/{ipHost}")
-    public ResponseEntity<HostResponseRest> hacerPing(@PathVariable String ipHost) {
-        return hostService.hacerPing(ipHost);
+    @PostMapping("/hacer-ping")
+    public void hacerPing(@RequestBody Host host) {
+        hostService.pingHost(host);
     }
 }

@@ -92,6 +92,7 @@ public class VariableOidServiceImpl implements iVariableOidService {
                     VariableOid variableEditada = variableOptional.get();
                     variableEditada.setValorVariable(variable.getValorVariable());
                     variableEditada.setSintaxisVariable(variable.getSintaxisVariable());
+                    variableEditada.setPrioridad(variable.getPrioridad());
                     variableEditada = variableDao.save(variableEditada);
                     if (variableEditada != null) {
                         listaVariables.add(variableEditada);

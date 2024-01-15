@@ -16,4 +16,7 @@ public interface iEventosDao extends JpaRepository<Eventos, Long> {
 
     @Query("SELECT e FROM Eventos e WHERE e.fechaEvento = (SELECT MAX(e2.fechaEvento) FROM Eventos e2 WHERE e2.snmpDevice = :dispositivo)")
     List<Eventos> findLatestEvents(@Param("dispositivo") SNMPDevice dispositivo);
+    
+    @Query("SELECT e FROM Eventos e WHERE e.fechaEvento = (SELECT MAX(e2.fechaEvento) FROM Eventos e2 WHERE e2.variableEvento = :variable)")
+    List<Eventos> findLatestEvents(@Param("variable") String variable);
 }
