@@ -13,6 +13,7 @@
     <version>v2</version>
     <name>Utilidades-UltraFibra</name>
     <description>Actualizacion de utilidades de ultrafibra.</description>
+    
     <properties> 
         <java.version>17</java.version>
     </properties>
@@ -22,16 +23,28 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         
+        <!-- WEB SOCKET-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        
+        <!-- Google Json -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.8.8</version>
+        </dependency>
+        
+        
         <!-- ENVIO DE MAIL -->
-        <!-- https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api -->
-  
+        <!-- https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api -->     
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>javax.mail-api</artifactId>
             <version>1.6.2</version> <!-- Utiliza la versión más reciente si está disponible -->
         </dependency>
-
-        <!-- ENVIO DE MAIL -->
+        
         
         <!-- DPENDENCIA PARA USAR REST SERVICE -->
         <dependency>
