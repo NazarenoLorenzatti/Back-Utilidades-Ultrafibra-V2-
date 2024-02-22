@@ -9,7 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-//@CrossOrigin(origins = {"45.230.65.207"})
+@CrossOrigin(origins = {
+    "*",
+    "http://45.230.65.207",
+    "http://localhost",
+    "http://192.168.1.77"})
 @RequestMapping("/api/v1/administrativo")
 public class AdministrativoRestController {
 

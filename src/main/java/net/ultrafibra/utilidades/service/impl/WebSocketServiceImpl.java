@@ -20,7 +20,7 @@ public class WebSocketServiceImpl implements iWebSocketService {
     }
 
     @Override
-    public void enviarMensaje(MessageAlert mensaje) {
+    public void enviarMensajeSnmp(MessageAlert mensaje) {
         messagingTemplate.convertAndSend("/topic/snmp-notifications", mensaje);
     }
 

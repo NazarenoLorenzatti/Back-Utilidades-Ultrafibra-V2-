@@ -2,31 +2,19 @@ package net.ultrafibra.utilidades.service.impl;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.Timestamp;
-import java.text.DecimalFormat;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
 import net.ultrafibra.utilidades.dao.iHostDao;
-import net.ultrafibra.utilidades.model.Datasets;
-import net.ultrafibra.utilidades.model.Eventos;
-import net.ultrafibra.utilidades.model.Host;
-import net.ultrafibra.utilidades.model.Log;
-import net.ultrafibra.utilidades.model.MessageAlert;
-import net.ultrafibra.utilidades.model.MessaggePing;
+import net.ultrafibra.utilidades.dao.iTecnicoDao;
+import net.ultrafibra.utilidades.model.*;
 import net.ultrafibra.utilidades.response.HostResponseRest;
-import net.ultrafibra.utilidades.response.LogResponseRest;
 import net.ultrafibra.utilidades.service.iHostService;
+import net.ultrafibra.utilidades.util.EmailService;
+import net.ultrafibra.utilidades.util.SMSService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,10 +30,16 @@ public class HostServiceImpl implements iHostService {
     private LogServiceImpl logService;
 
     @Autowired
-    private DatasetsServiceImpl dataService;
+    private SMSService smsService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private WebSocketServiceImpl webSocketService;
+
+    @Autowired
+    private iTecnicoDao tecnicoDao;
 
     private Map<String, Boolean> hostStatusMap = new HashMap<>();
     private Map<String, Long> logStartTimeMap = new HashMap<>();
@@ -169,9 +163,9 @@ public class HostServiceImpl implements iHostService {
             e.printStackTrace();
         }
     }
-
-    /*
-    @Scheduled(fixedDelay = 60000) // Intervalo de 6 minutos
+    
+    
+    @Scheduled(fixedDelay = 120000) // Intervalo de 2 minutos
     public void ping() {
         for (Host h : hostDao.findAll()) {
             boolean reachable;
@@ -182,8 +176,8 @@ public class HostServiceImpl implements iHostService {
                 if (reachable && !hostStatusMap.getOrDefault(h.getIpHost(), false)) { // Si estaba desconectado y ahora está conectado
 
                     logStartTimeMap.put(h.getIpHost(), System.currentTimeMillis());
-                    System.out.println("CONECTADO" + h.getNombreHost());
                     this.socketMessage(h, reachable);
+                    enviarAlertas("Encendido - "+h.getNombreHost(), h.getNombreHost() + " Encendido " + System.currentTimeMillis());
 
                 } else if (!reachable && hostStatusMap.getOrDefault(h.getIpHost(), false)) { // Si estaba conectado y ahora está desconectado
 
@@ -193,18 +187,16 @@ public class HostServiceImpl implements iHostService {
                     this.registrarEvento(h, logStartTime, logEndTime);
                     //Envio informacion Socket
                     this.socketMessage(h, reachable);
-                    System.out.println("DESCONECTADO" + h.getNombreHost());
+                    enviarAlertas("Apagado - "+h.getNombreHost(), h.getNombreHost() + " Apagado " + System.currentTimeMillis());
                 }
 
                 hostStatusMap.put(h.getIpHost(), reachable);
             } catch (IOException e) {
 
                 if (hostStatusMap.getOrDefault(h.getIpHost(), false)) {
-                    //Registrar Evento
                     long logStartTime = logStartTimeMap.getOrDefault(h.getIpHost(), 0L);
                     long logEndTime = System.currentTimeMillis();
                     this.registrarEvento(h, logStartTime, logEndTime);
-                    //Envio informacion Socket
                     this.socketMessage(h, false);
                 }
                 hostStatusMap.put(h.getIpHost(), false);
@@ -212,10 +204,9 @@ public class HostServiceImpl implements iHostService {
 
         }
     }
-    */
+
     private void registrarEvento(Host h, long inicio, long fin) {
         Log log = new Log();
-        
         double diferenciaEnMinutos = (double) (fin - inicio) / (60 * 1000);
         log.setHost(h);
         log.setInicio(new Timestamp(inicio));
@@ -235,19 +226,10 @@ public class HostServiceImpl implements iHostService {
         this.webSocketService.enviarMensaje(messaggePing);
     }
 
-//    @Scheduled(fixedRate = 1800000)
-//    public void liberarDatos() {
-//        List<Datasets> listaDeDatos = dataService.listarData().getBody().getDatasetsResponse().getDatasets();
-//        for (Datasets d : listaDeDatos) {
-//
-//            Date fechaAlmacenada = d.getFecha();
-//            Date fechaActual = new Date(Calendar.getInstance().getTime().getTime());
-//            long diferenciaEnMillis = fechaActual.getTime() - fechaAlmacenada.getTime();
-//            long diferenciaEnDias = diferenciaEnMillis / (1000 * 60 * 60 * 24);
-//
-//            if (diferenciaEnDias > 7) {
-//                dataService.eliminarData(d.getIdDataset());
-//            }
-//        }
-//    }
+    private void enviarAlertas(String aviso, String asunto) {
+        for (Tecnico t : tecnicoDao.findAll()) {
+            emailService.enviarMail(t.getEmail(), asunto, aviso);
+            smsService.enviarMensaje(aviso, t.getTelefono());
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package net.ultrafibra.utilidades.util;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SMSService {
 
-    private static String token;
+    private String token;
 
     public int enviarMensaje(String aviso, String celular) {
         int ret = 0;
@@ -21,7 +23,7 @@ public class SMSService {
             nuevoToken();
             Unirest.setTimeouts(0, 0);
             HttpResponse<String> response = Unirest.post("https://mayten.cloud/api/Mensajes/Texto")
-                    .header("Authorization", "Bearer " + token)
+                    .header("Authorization", "Bearer " + this.token)
                     .header("Content-Type", "application/json")
                     .body(bodyResponse(aviso, celular))
                     .asString();
@@ -35,15 +37,17 @@ public class SMSService {
     }
 
     //SOLICITAR TOKEN NUEVO
-    private static void nuevoToken() {
+    private void nuevoToken() {
         try {
             Unirest.setTimeouts(0, 0);
             HttpResponse<String> response = Unirest.post("http://mayten.cloud/auth")
                     .header("Content-Type", "application/json")
                     .body("{\r\n\t\"username\": \"megalink\",\r\n\t\"password\": \"megalink123\"\r\n}")
                     .asString();
-            String body = response.getBody();
-            token = body.substring(10, 314);
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(response.getBody(), JsonObject.class);
+
+            this.token = jsonObject.get("token").getAsString();
 
         } catch (UnirestException ex) {
             Logger.getLogger(SMSService.class.getName()).log(Level.SEVERE, null, ex);
@@ -61,10 +65,9 @@ public class SMSService {
                                         + "\r\n\"mensaje\": \"" + aviso + "\","
                                         + "\r\n\"telefono\": \""+ celular + "\","
                                         + "\r\n\"identificador\":\"\"\r\n"
-                                    + "},\r\n    "
+                                    + "}\r\n    "
                         + "]\r\n"
                 + "}";
-        
         return body;
     }
 }

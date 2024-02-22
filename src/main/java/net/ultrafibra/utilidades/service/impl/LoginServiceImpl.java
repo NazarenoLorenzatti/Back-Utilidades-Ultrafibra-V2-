@@ -48,7 +48,7 @@ public class LoginServiceImpl implements iLoginService {
     private PasswordGeneratorService passwordGenerator;
 
     @Override
-    public ResponseEntity<ResponseRest> primerFactor(String userName, String password) {
+    public ResponseEntity<ResponseRest> login(String userName, String password) {
         ResponseRest respuesta = new ResponseRest();
         try {
             UserDetails userDetails = this.userDetails.loadUserByUsername(userName);
@@ -57,8 +57,6 @@ public class LoginServiceImpl implements iLoginService {
                 usuario.setPin(passwordGenerator.generarPin());
                 usuario = usuarioDao.save(usuario);
 
-                smsService.enviarMensaje("Este es su Pin para ingresar al gestor de contraseñas:"
-                        + " " + usuario.getPin(), usuario.getAdministrativo().getTelefono());
                 emailService.enviarMail(usuario.getAdministrativo().getEmail(), "PIN PAR AUTENTICAR", usuario.getPin().toString());
                 respuesta.setMetadata("Respuesta ok", "00", "Login correcto");
                 return new ResponseEntity<>(respuesta, HttpStatus.OK);
@@ -76,7 +74,7 @@ public class LoginServiceImpl implements iLoginService {
     }
 
     @Override
-    public ResponseEntity<JWTResponseRest> login(String userName, String password, int pin) {
+    public ResponseEntity<JWTResponseRest> confirm(String userName, String password, int pin) {
         JWTResponseRest respuesta = new JWTResponseRest();
         List<Jwt> listaJWT = new ArrayList<>();
         try {

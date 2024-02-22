@@ -71,7 +71,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests()
                 .requestMatchers(HttpMethod.OPTIONS).permitAll()
-                .requestMatchers("/login","/primer-factor", "/api/v1/usuario/crear-usuario", "/prueba", "/web-socket/**").permitAll()               
+                .requestMatchers("api/v1/login","api/v1/confirm", "/api/v1/usuario/crear-usuario", "/api/v1/usuario/confirm", "/prueba", "/web-socket/**").permitAll()               
                 .anyRequest()
                 .authenticated()
                 .and()

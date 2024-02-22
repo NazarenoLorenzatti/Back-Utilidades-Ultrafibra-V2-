@@ -32,11 +32,10 @@ public class SNMPDevice implements Serializable {
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JoinColumn(name = "SNMP_DEVICE_id_device")
     private List<Eventos> eventos;
-
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
-    @JoinColumn(name = "SNMP_DEVICE_id_device")
-    @JsonManagedReference
-    private List<OidClass> oids;
+    
+    @OneToOne
+    @JoinColumn(name = "table_hosts_id_host")
+    private Host host;
 
     public SNMPDevice() {
     }

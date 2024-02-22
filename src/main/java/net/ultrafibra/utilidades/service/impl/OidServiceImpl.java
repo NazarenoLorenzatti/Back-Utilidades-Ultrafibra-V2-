@@ -49,23 +49,17 @@ public class OidServiceImpl implements iOidService {
         List<OidClass> listaOids = new ArrayList<>();
         try {
             if (oid != null) {
-                Optional<SNMPDevice> snmpOptional = snmpDao.findById(oid.getSnmpDevice().getIdDispositivo());
-                if (snmpOptional.isPresent()) {
-                    oid.setSnmpDevice(snmpOptional.get());
-                    OidClass oidGuardado = oidDao.save(oid);
-                    if (oidGuardado != null) {
-                        listaOids.add(oidGuardado);
-                        respuesta.getOidResponse().setOids(listaOids);
-                        respuesta.setMetadata("Respuesta ok", "00", "Oid Guardado");
-                    } else {
-                        respuesta.setMetadata("Respuesta nok", "-1", "No se pudo guardar el Oid");
-                        return new ResponseEntity<>(respuesta, HttpStatus.NOT_FOUND);
-                    }
 
+                OidClass oidGuardado = oidDao.save(oid);
+                if (oidGuardado != null) {
+                    listaOids.add(oidGuardado);
+                    respuesta.getOidResponse().setOids(listaOids);
+                    respuesta.setMetadata("Respuesta ok", "00", "Oid Guardado");
                 } else {
-                    respuesta.setMetadata("Respuesta nok", "-1", "No se pudo guardar el Oid, por que no se encontro el dispositivo SNMP");
-                    return new ResponseEntity<>(respuesta, HttpStatus.NO_CONTENT);
+                    respuesta.setMetadata("Respuesta nok", "-1", "No se pudo guardar el Oid");
+                    return new ResponseEntity<>(respuesta, HttpStatus.NOT_FOUND);
                 }
+
             } else {
                 respuesta.setMetadata("Respuesta nok", "-1", "No se pudo guardar el Oid, por que no se envio ninguno");
                 return new ResponseEntity<>(respuesta, HttpStatus.NO_CONTENT);

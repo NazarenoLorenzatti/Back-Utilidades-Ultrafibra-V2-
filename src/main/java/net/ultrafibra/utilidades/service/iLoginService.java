@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 
 public interface iLoginService {
     
-    public ResponseEntity<ResponseRest> primerFactor(String userName, String password);
-    public ResponseEntity<JWTResponseRest> login(String userName, String password, int pin);
+    public ResponseEntity<ResponseRest> login(String userName, String password);
+    public ResponseEntity<JWTResponseRest> confirm(String userName, String password, int pin);
     
 }

@@ -15,4 +15,11 @@ public interface iBaseBanelcoService {
     public ResponseEntity<byte[]> downloadTxt(String nombreArchivo) throws IOException;
     
     public ResponseEntity<BaseBanelcoResponseRest> obtenerTabla();
+    
+    public ResponseEntity<ResponseRest> leerExcelRespuesta(MultipartFile fileExcel);
+    
+     public ResponseEntity<byte[]> downloadXLS(String nombreArchivo) throws IOException;
+     
+      public ResponseEntity<byte[]> downloadCsv(String nombreArchivo) throws IOException;
+    
 }

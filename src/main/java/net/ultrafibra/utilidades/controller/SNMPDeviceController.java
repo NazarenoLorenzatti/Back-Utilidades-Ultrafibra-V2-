@@ -1,8 +1,8 @@
 package net.ultrafibra.utilidades.controller;
 
-import net.ultrafibra.utilidades.model.RequestBodyDto;
 import net.ultrafibra.utilidades.model.SNMPDevice;
 import net.ultrafibra.utilidades.model.Tecnico;
+import net.ultrafibra.utilidades.response.MessageAlertResponseRest;
 import net.ultrafibra.utilidades.response.SNMPDeviceResponseRest;
 import net.ultrafibra.utilidades.service.impl.SNMPDeviceServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,12 +84,13 @@ public class SNMPDeviceController {
      * @param ipDispositivo
      * @return 
      */
-    @PostMapping("/consulta-snmp")
+    /*@PostMapping("/consulta-snmp")
     public ResponseEntity<SNMPDeviceResponseRest> consultaSNMP(
             @RequestParam("telefono") String telefono, 
             @RequestParam("email") String email, 
             @RequestParam("oid") String oid,
             @RequestParam("ip") String ipDispositivo) {
         return deviceService.consultaSNMP(ipDispositivo,oid, telefono, email);
-    }
+    }*/
+    
 }

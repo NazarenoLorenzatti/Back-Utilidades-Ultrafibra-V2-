@@ -11,12 +11,7 @@ public class WebSocketController {
     @MessageMapping("/chat/{roomId}")
     @SendTo("/topic")
     public MessageAlert evento(Eventos evento) {
-        return new MessageAlert(
-                  evento.getLogEvento(), 
-                            evento.getSnmpDevice().getNombreDispositivo(),
-                            evento.getFechaEvento().toString(),
-                            evento.getSnmpDevice().getIdDispositivo(),
-                            evento.getPrioridad());
+        return new MessageAlert();
     }
 
 }

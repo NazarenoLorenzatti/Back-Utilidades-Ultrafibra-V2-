@@ -46,8 +46,6 @@ public class EventosController {
       */
      @DeleteMapping("/eliminar-evento/{idEvento}")
      public ResponseEntity<EventosResponseRest> eliminarEvento(@PathVariable Long idEvento){
-         System.out.println("PASOOO ELIMINAR EVENTOS");
-         System.out.println("idEvento = " + idEvento);
          return eventosService.eliminarEvento(idEvento);
      }
      
@@ -58,7 +56,6 @@ public class EventosController {
       */
      @PostMapping("/eliminar-eventos")
       public ResponseEntity<EventosResponseRest> eliminarEventos(@RequestBody  SNMPDevice dispositivo){
-          System.out.println("PASOOO ELIMINAR EVENTOS");
          return eventosService.eliminarEventos(dispositivo);
      }
       

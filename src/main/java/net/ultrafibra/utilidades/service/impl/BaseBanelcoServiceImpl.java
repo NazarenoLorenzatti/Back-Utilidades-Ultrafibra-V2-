@@ -1,7 +1,16 @@
 package net.ultrafibra.utilidades.service.impl;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.List;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.sql.Date;
 import java.text.*;
 import java.time.*;
@@ -22,6 +31,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import net.ultrafibra.utilidades.dao.iHomebankingDao;
+import net.ultrafibra.utilidades.model.Item;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Slf4j
 @Service
@@ -57,6 +68,7 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
         ResponseRest respuesta = new ResponseRest();
         try {
             banelcoDao.deleteAll();
+            banelcoDao.reiniciarIndices();
             respuesta.setMetadata("Respuesta ok", "00", "Eliminadas todas las celdas");
         } catch (Exception e) {
             respuesta.setMetadata("Respuesta nok", "-1", "Error al intentar eliminar");
@@ -152,6 +164,143 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
 
     @Override
     @Transactional()
+    public ResponseEntity<ResponseRest> leerExcelRespuesta(MultipartFile fileExcel) {
+        ResponseRest respuesta = new ResponseRest();
+        if (fileExcel != null) {
+            try ( Workbook workbook = WorkbookFactory.create(fileExcel.getInputStream())) {
+                Iterator<Sheet> sheetIterator = workbook.sheetIterator();
+
+                while (sheetIterator.hasNext()) {
+                    Sheet sheet = sheetIterator.next();
+                    Iterator<Row> rowIterator = sheet.rowIterator();
+
+                    // La primer fila Guarda los encabezados
+                    Row headerRow = rowIterator.next();
+
+                    while (rowIterator.hasNext()) {
+                        Row row = rowIterator.next();
+
+                        BaseHomebanking lineaBanelco = new BaseHomebanking();
+
+                        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                            Cell headerCell = headerRow.getCell(i);
+                            Cell dataCell = row.getCell(i);
+
+                            if (headerCell != null && dataCell != null) {
+                                String header = headerCell.getStringCellValue();
+                                String dataString = null;
+                                SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm'hs'");
+
+                                double dataNumeric = 0.0;
+                                if (dataCell.getCellType() == CellType.NUMERIC) {
+                                    dataNumeric = dataCell.getNumericCellValue();
+                                } else if (dataCell.getCellType() == CellType.STRING) {
+                                    dataString = dataCell.getStringCellValue();
+                                }
+
+                                switch (header) {
+                                    case "Monto":
+                                        lineaBanelco.setTotalSinRecargo(dataNumeric);
+                                        break;
+                                    case "Fecha Pago":
+                                        java.util.Date parsed = format.parse(dataString);
+                                        Date sqlDate = new Date(parsed.getTime());
+                                        lineaBanelco.setFechaVencimiento(sqlDate);
+                                        break;
+                                    case "Informacion":
+                                        Gson gson = new Gson();
+                                        Type itemListType = new TypeToken<List<Item>>() {
+                                        }.getType();
+                                        List<Item> itemList = gson.fromJson(dataString, itemListType);
+                                        for (Item item : itemList) {
+                                            String clave1 = item.getClave1();
+                                            lineaBanelco.setDniCliente(clave1);
+                                        }
+                                        break;
+                                }
+                            }
+                        }
+                        banelcoDao.save(lineaBanelco);
+                    }
+                    respuesta.setMetadata("Respuesta ok", "00", "Se subio correctamente el Archivo");
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(BaseBanelcoServiceImpl.class.getName()).log(Level.SEVERE, null, ex);
+                respuesta.setMetadata("Respuesta nok", "-1", "Ocurrio un error al subir el archivo");
+                return new ResponseEntity<>(respuesta, HttpStatus.INTERNAL_SERVER_ERROR);
+            } catch (ParseException ex) {
+                Logger.getLogger(BaseBanelcoServiceImpl.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            respuesta.setMetadata("Respuesta nok", "-1", "No se envio ningun Archivo");
+            return new ResponseEntity<>(respuesta, HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(respuesta, HttpStatus.OK);
+    }
+
+    // PRUEBA CON EXCEL
+    @Override
+    @Transactional()
+    public ResponseEntity<byte[]> downloadXLS(String nombreArchivo) throws IOException {
+        List<List<String>> filas = new ArrayList();
+        List<String> cabeceros = Arrays.asList("Monto", "Fecha de Pago", "Etiqueta", "Empresa");
+        SimpleDateFormat format = new SimpleDateFormat("dd/M/yyyy");
+
+        for (BaseHomebanking b : banelcoDao.findAll()) {
+            List<String> linea = new ArrayList();
+            linea.add((this.df.format(b.getTotalSinRecargo())));
+            linea.add(format.format(b.getFechaVencimiento()));
+            linea.add("MacroClick");
+            linea.add(b.getDniCliente());
+            filas.add(linea);
+        }
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            exportar(filas, cabeceros).write(outputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Respuesta Macroclick.xlsx");
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(outputStream.toByteArray());
+    }
+
+    // PRUEBA CON CSV
+    @Override
+    @Transactional()
+    public ResponseEntity<byte[]> downloadCsv(String nombreArchivo) throws IOException {
+        SimpleDateFormat format = new SimpleDateFormat("dd/M/yyyy");
+
+        try ( ByteArrayOutputStream outputStream = new ByteArrayOutputStream();  BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
+
+            writer.write("Monto;Fecha de Pago;Etiqueta;Empresa\n");
+
+            for (BaseHomebanking b : banelcoDao.findAll()) {
+                writer.write(this.df.format(b.getTotalSinRecargo()) + ";" + format.format(b.getFechaVencimiento()) + ";MacroClick;" + b.getDniCliente() + "\n");
+            }
+
+            writer.flush(); // Flush para asegurar que todos los datos sean escritos
+            byte[] bytes = outputStream.toByteArray();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + nombreArchivo + ".csv");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @Override
+    @Transactional()
     public ResponseEntity<byte[]> downloadTxt(String nombreArchivo) throws IOException {
 
         // PRIMER FILA
@@ -166,10 +315,18 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
             if (b.getFechaVencimiento().toLocalDate().isAfter(b.getFechaVencimiento().toLocalDate().plusDays(60))) {
                 continue;
             } else {
+
+                String motivo = "";
+                if (b.getDocumentoOrigen().contains("SO")) {
+                    motivo = "Monto por unica Vez";
+                } else {
+                    motivo = "FAC Mensual " + b.getFechaFactura().toLocalDate().getMonth().getDisplayName(TextStyle.FULL, Locale.forLanguageTag("es")) + " ULTRAFIBRA";
+                }
+
                 cont += 1;
                 filas += asignarEspacios("5" + b.getDniCliente(), 20) + asignarEspacios(b.getIdLinea().toString(), 20)
                         + asignarEspacios(montosXVencimientos(b), 96)
-                        + asignarEspacios("FAC " + b.getFechaFactura().toLocalDate().getMonth().getDisplayName(TextStyle.FULL, Locale.forLanguageTag("es")) + " ULTRAFIBRA", 40).toUpperCase()
+                        + asignarEspacios(motivo, 40).toUpperCase()
                         + asignarEspacios("FAC " + b.getFechaFactura().toLocalDate().getMonth().getDisplayName(TextStyle.FULL, Locale.forLanguageTag("es")).substring(0, 3), 15).toUpperCase()
                         + asignarEspacios(b.getNumeroFactura(), 60) + cerosDerecha("", 29) + "\n";
             }
@@ -226,18 +383,33 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
         String strTotalConRecargo = cerosIzquierda(String.valueOf(df.format(b.getTotalConRecargo())).replace(",", ""), 11);
         String strImporteAdeudado = cerosIzquierda(String.valueOf(df.format(b.getImporteAdeudado())).replace(",", ""), 11);
 
-        if (b.getTotalSinRecargo() != b.getImporteAdeudado()) {
+        if (b.getTotalSinRecargo() == b.getImporteAdeudado()) {
             if (LocalDate.now().isAfter(fechaVencimiento)) {
-                this.montoTotal += b.getTotalConRecargo(); // TOTAL CON RECARGO
-                montosXVencimientos += "0" + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(5)) + strTotalConRecargo
-                        + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(20)) + strTotalConRecargo
-                        + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(45)) + strTotalConRecargo;
+                if (b.getTotalConRecargo() != 0) {
+                    this.montoTotal += b.getTotalConRecargo(); // TOTAL CON RECARGO
+                    montosXVencimientos += "0" + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(5)) + strTotalConRecargo
+                            + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(20)) + strTotalConRecargo
+                            + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(45)) + strTotalConRecargo;
+                } else {
+                    this.montoTotal += b.getTotalSinRecargo(); // TOTAL CON RECARGO
+                    montosXVencimientos += "0" + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(5)) + strTotalSinRecargo
+                            + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(20)) + strTotalSinRecargo
+                            + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(45)) + strTotalSinRecargo;
+                }
 
             } else {
-                this.montoTotal += b.getTotalSinRecargo(); // TOTAL SIN RECARGO
-                montosXVencimientos += "0" + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento) + strTotalSinRecargo
-                        + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(20)) + strTotalSinRecargo
-                        + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(60)) + strTotalSinRecargo;
+                if (b.getTotalConRecargo() != 0) {
+                    this.montoTotal += b.getTotalSinRecargo(); // TOTAL SIN RECARGO
+                    montosXVencimientos += "0" + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento) + strTotalSinRecargo
+                            + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(20)) + strTotalConRecargo
+                            + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(60)) + strTotalConRecargo;
+                } else {
+                    this.montoTotal += b.getTotalSinRecargo(); // TOTAL SIN RECARGO
+                    montosXVencimientos += "0" + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento) + strTotalSinRecargo
+                            + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(20)) + strTotalSinRecargo
+                            + DateTimeFormatter.ofPattern("yyyyMMdd").format(fechaVencimiento.plusDays(60)) + strTotalSinRecargo;
+                }
+
             }
         } else {
             if (LocalDate.now().isAfter(fechaVencimiento)) {
@@ -255,6 +427,32 @@ public class BaseBanelcoServiceImpl implements iBaseBanelcoService {
         }
 
         return montosXVencimientos + "0000000000000000000" + b.getDniCliente();
+    }
+
+    public Workbook exportar(List<List<String>> filas, List<String> cabeceros) {
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Hoja1");
+
+        int index = 0;
+        //Headers
+        Row headerRow = sheet.createRow(index);
+        for (String c : cabeceros) {
+            headerRow.createCell(index).setCellValue(cabeceros.get(index));
+            index++;
+        }
+
+        for (int i = 0; i < filas.size(); i++) {
+            List<String> fila = filas.get(i);
+            Row dataRow = sheet.createRow(i + 1);
+            int ind = 0;
+            for (String celda : fila) {
+                dataRow.createCell(ind).setCellValue(celda);
+                ind++;
+            }
+        }
+
+        return workbook;
     }
 
 }

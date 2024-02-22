@@ -2,13 +2,18 @@ package net.ultrafibra.utilidades.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import net.ultrafibra.utilidades.dao.iEventosDao;
+import net.ultrafibra.utilidades.dao.iSNMPDeviceDao;
+import net.ultrafibra.utilidades.dao.iTecnicoDao;
 import net.ultrafibra.utilidades.model.Eventos;
 import net.ultrafibra.utilidades.model.SNMPDevice;
-import net.ultrafibra.utilidades.model.VariableOid;
+import net.ultrafibra.utilidades.model.Tecnico;
 import net.ultrafibra.utilidades.response.EventosResponseRest;
 import net.ultrafibra.utilidades.service.iEventosService;
+import net.ultrafibra.utilidades.util.EmailService;
+import net.ultrafibra.utilidades.util.SMSService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +24,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EventosServiceImpl implements iEventosService {
 
-     @Autowired
+    @Autowired
     private iEventosDao eventoDao;
+
+    @Autowired
+    private iSNMPDeviceDao deviceDao;
+
+    @Autowired
+    private SMSService smsService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private iTecnicoDao tecnicoDao;
 
     @Override
     @Transactional(readOnly = true)
@@ -45,11 +62,14 @@ public class EventosServiceImpl implements iEventosService {
         List<Eventos> listaEventos = new ArrayList<>();
         try {
             if (evento != null) {
+                Optional<SNMPDevice> dispositivo = deviceDao.findById(evento.getSnmpDevice().getIdDispositivo());
+                evento.setSnmpDevice(dispositivo.get());
                 Eventos eventoGuardado = eventoDao.save(evento);
                 if (eventoGuardado != null) {
+                    enviarAlertas(eventoGuardado);
                     listaEventos.add(eventoGuardado);
                     respuesta.getEventosResponse().setEventos(listaEventos);
-                    respuesta.setMetadata("Respuesta ok", "00", "Evento Guardado");                   
+                    respuesta.setMetadata("Respuesta ok", "00", "Evento Guardado");
                 } else {
                     respuesta.setMetadata("Respuesta nok", "-1", "No se pudo guardar el Evento");
                     return new ResponseEntity<>(respuesta, HttpStatus.NOT_FOUND);
@@ -134,37 +154,48 @@ public class EventosServiceImpl implements iEventosService {
         }
         return new ResponseEntity<>(respuesta, HttpStatus.OK);
     }
-    
+
     @Transactional(readOnly = true)
-    public Eventos ultimoEvento(SNMPDevice dispositivo){
+    public Eventos ultimoEvento(SNMPDevice dispositivo) {
         Eventos ultimoEvento = null;
-        try{
-          List<Eventos> listaEventos =  eventoDao.findLatestEvents(dispositivo);
-          if(listaEventos != null){
-              ultimoEvento = listaEventos.get(0);
-          }
-        } catch (Exception e) {            
-             e.getStackTrace();
-             System.out.println("Ocurrio un problema al intentar obtener el ultimo evento");
-             return null;
+        try {
+            List<Eventos> listaEventos = eventoDao.findLatestEvents(dispositivo);
+            if (listaEventos != null) {
+                ultimoEvento = listaEventos.get(0);
+            }
+        } catch (Exception e) {
+            e.getStackTrace();
+            System.out.println("Ocurrio un problema al intentar obtener el ultimo evento");
+            return null;
         }
         return ultimoEvento;
     }
-    
+
     @Transactional(readOnly = true)
-     public Eventos ultimoEvento(String variable){
+    public Eventos ultimoEvento(String variable) {
         Eventos ultimoEvento = null;
-        try{
-          List<Eventos> listaEventos =  eventoDao.findLatestEvents(variable);
-          if(listaEventos != null){
-              ultimoEvento = listaEventos.get(0);
-          }
-        } catch (Exception e) {            
-             e.getStackTrace();
-             System.out.println("Ocurrio un problema al intentar obtener el ultimo evento dee la variable");
-             return null;
+        try {
+            List<Eventos> listaEventos = eventoDao.findLatestEvents(variable);
+            if (listaEventos != null) {
+                ultimoEvento = listaEventos.get(0);
+            }
+        } catch (Exception e) {
+            e.getStackTrace();
+            System.out.println("Ocurrio un problema al intentar obtener el ultimo evento dee la variable");
+            return null;
         }
         return ultimoEvento;
+    }
+
+    private void enviarAlertas(Eventos evento) {
+        for(Tecnico t: tecnicoDao.findAll()){
+            if(evento.getPrioridad().equals("Danger")){
+                emailService.enviarMail(t.getEmail(), evento.getLogEvento() + " " + evento.getPrioridad(), evento.getLogEvento() + "\n" + evento.getFechaEvento() + "\n" + evento.getSnmpDevice().getNombreDispositivo());
+                smsService.enviarMensaje(evento.getLogEvento() + "\n" + evento.getFechaEvento() + "\n" + evento.getSnmpDevice().getNombreDispositivo(), t.getTelefono());
+            } else if(evento.getPrioridad().equals("Warn")) {
+                 emailService.enviarMail(t.getEmail(), evento.getLogEvento() + " " + evento.getPrioridad(), evento.getLogEvento() + "\n" + evento.getFechaEvento() + "\n" + evento.getSnmpDevice().getNombreDispositivo());
+            }
+        }
     }
 
 }

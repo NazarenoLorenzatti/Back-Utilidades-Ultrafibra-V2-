@@ -5,7 +5,7 @@ import net.ultrafibra.utilidades.model.MessaggePing;
 
 public interface iWebSocketService {
 
-    public void enviarMensaje(MessageAlert mensaje);
+    public void enviarMensajeSnmp(MessageAlert mensaje);
 
     public void enviarMensaje(MessaggePing mensaje);
 }

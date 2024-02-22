@@ -133,14 +133,14 @@ public class BaseLinkServiceImpl implements iBaseLinkService {
         String fechaStr = DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDateTime.now());
         String registros = valueOf(this.filasTotales * 133);
         String fila1 = "HRPASCTRL" + fechaStr + "GK0" + nombreArchivo + cerosIzquierda(registros, 10);
-        fila1 = asignarEspacios(fila1, 75) + "\n";
+        fila1 = asignarEspacios(fila1, 74) + "\n";
         String fila2 = "LOTES" + "00001" + cerosIzquierda(valueOf(this.filasTotales), 8)
                 + cerosIzquierda(String.valueOf(df.format(montoTotalPrimerVto)).replace(",", ""), 18)
                 + cerosIzquierda(String.valueOf(df.format(montoTotalSegundoVto)).replace(",", ""), 18) + "000000000000000000";
-        fila2 = asignarEspacios(fila2, 75) + "\n";
+        fila2 = asignarEspacios(fila2, 74) + "\n";
         String fila3 = "FINAL" + cerosIzquierda(valueOf(this.filasTotales), 8) + cerosIzquierda(String.valueOf(df.format(montoTotalPrimerVto)).replace(",", ""), 18)
                 + cerosIzquierda(String.valueOf(df.format(montoTotalSegundoVto)).replace(",", ""), 18) + "000000000000000000" + ultimaFecha;
-        fila3 = asignarEspacios(fila3, 75) + "\n";
+        fila3 = asignarEspacios(fila3, 74) + "\r\n";
         String archivoControl = fila1 + fila2 + fila3;
 
         // Convertir el contenido a bytes
@@ -199,14 +199,14 @@ public class BaseLinkServiceImpl implements iBaseLinkService {
     private void establecerMontoPrimerVto(double totalAdeudado, double totalConRecargo, double totalSinRecargo) {
         if (totalAdeudado == totalSinRecargo) {
             this.montoTotalPrimerVto += totalSinRecargo;
-            montoPrimerVto = cerosIzquierda(String.valueOf(totalSinRecargo).replace(".", ""), 12);
+            montoPrimerVto = cerosIzquierda(String.valueOf(df.format(totalSinRecargo)).replace(",", ""), 12);
         } else {
             if (totalAdeudado != totalConRecargo) {
                 this.montoTotalPrimerVto += totalAdeudado;
-                montoPrimerVto = cerosIzquierda(String.valueOf(totalAdeudado).replace(".", ""), 12);
+                montoPrimerVto = cerosIzquierda(String.valueOf(df.format(totalAdeudado)).replace(",", ""), 12);
             } else {
                 this.montoTotalPrimerVto += totalSinRecargo;
-                montoPrimerVto = cerosIzquierda(String.valueOf(totalSinRecargo).replace(".", ""), 12);
+                montoPrimerVto = cerosIzquierda(String.valueOf(df.format(totalSinRecargo)).replace(",", ""), 12);
             }
         }
     }
@@ -214,7 +214,7 @@ public class BaseLinkServiceImpl implements iBaseLinkService {
     private void establecerMontoSegundoVto(double totalConRecargo, double importeAdeudado) {
         if (totalConRecargo != 0.0) {
             this.montoTotalSegundoVto += totalConRecargo;
-            montoSegundoVto = cerosIzquierda(String.valueOf(totalConRecargo).replace(".", ""), 12);
+            montoSegundoVto = cerosIzquierda(String.valueOf(df.format(totalConRecargo)).replace(",", ""), 12);
         } else {
             this.montoTotalSegundoVto += importeAdeudado;
             montoSegundoVto = montoPrimerVto; // si es igual a 0 el primer vencimiento no tiene re cargo y es igual al monto del primer vencimiento

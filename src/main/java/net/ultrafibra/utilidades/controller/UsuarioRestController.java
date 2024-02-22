@@ -10,7 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-//@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = {
+    "*",
+    "http://45.230.65.207",
+    "http://localhost",
+    "http://192.168.1.77"})
 @RequestMapping("/api/v1/usuario")
 public class UsuarioRestController {
 
@@ -48,13 +52,13 @@ public class UsuarioRestController {
      *
      * @param username
      * @return
-     * @throws Exception
-     */
+     
     @GetMapping("/buscar-usuario/{username}")
     public ResponseEntity<UsuarioResponseRest> buscarUsuario(@PathVariable String username) throws Exception {
         ResponseEntity<UsuarioResponseRest> respuesta = usuarioService.buscarUsuario(username);
         return respuesta;
-    }
+    }* @throws Exception
+     */
 
     /**
      * Buscar Usuario por ID
